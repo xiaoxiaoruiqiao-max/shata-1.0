@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.log
+*.lock
+*.zip
+.env
+.env.*
+audit-state/
+backups/
+**/data/state.json
+**/data/shadow.json
+**/data/pilot.json
+**/data/confirmed_halts.json

@@ -1,0 +1,11 @@
+__pycache__
+audit-state
+backups
+local-preview*.log
+data/state.json
+data/pilot.json
+data/shadow.json
+data/shadow.lock
+data/confirmed_halts.json
+data/update.lock
+*.zip

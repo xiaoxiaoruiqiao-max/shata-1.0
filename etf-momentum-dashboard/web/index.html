@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="四只 ETF 的动量轮动信号、历史净值与持仓日历">
+<link rel="icon" href="mark.svg"><link rel="stylesheet" href="styles.css?v=9"><script defer src="app.js?v=9"></script><script defer src="pilot.js?v=9"></script><script defer src="shadow.js?v=9"></script><script defer src="dividend.js?v=9"></script><script defer src="dual.js?v=9"></script><script defer src="momentum.js?v=9"></script>
+<title>ETF 动量看板</title>
+</head>
+<body>
+<header class="top"><div class="top-inner"><a class="brand" href="#overview"><img src="mark.svg" alt="" width="28" height="28">ETF 动量看板</a><nav aria-label="导航"><a href="#overview">总览</a><a href="#dual-history">双版历史</a><a href="#shadow">并行模拟</a><a href="#pilot">实盘试验</a><a href="#calendar">持仓日历</a><a href="#annual">年度收益</a><a href="#trades">模拟交易</a></nav><span id="status" class="status" role="status">读取行情</span></div></header>
+<main>
+<section id="overview" aria-labelledby="title">
+<div class="intro"><div><h1 id="title">四资产动量轮动</h1><p id="coverage">读取历史行情…</p></div><div class="method">25 日加权动量<span>收盘打分 · 次日上午执行</span></div></div>
+<div id="warning" class="warning" role="status" hidden></div>
+<div class="hero">
+<article class="card signal-card"><div class="section-head"><div><h2>下一交易日信号</h2><p id="signal-date">等待行情</p></div></div><div id="signal"></div><div id="ranking"></div><p class="caption" id="signal-note"></p></article>
+<article class="card chart-card"><div class="section-head"><div><h2 id="nav-title">上证180版组合净值</h2><p id="mode-note">初始净值 1.00 · 人民币</p></div><div id="book-mode" class="segmented mode-tabs" aria-label="净值及持仓口径"><button type="button" data-live="0" aria-pressed="true" class="active">历史模拟</button><button type="button" data-live="1" aria-pressed="false">实盘账本</button></div></div>
+<div id="metrics" class="metrics"></div>
+<div id="ranges" class="segmented range-row" aria-label="曲线区间"></div>
+<div id="chart-wrap" class="chart-wrap"><canvas id="chart" tabindex="0" aria-label="净值图。点按或用左右方向键查看交易日"></canvas><div id="chart-tip" class="chart-tip" hidden></div></div>
+<div id="chart-empty" class="empty-state" hidden>登记试验起始日后，第一个已核对的收盘将生成实盘净值。</div>
+<div id="chart-footer" class="chart-footer"><span id="strategy-key" class="key strategy">ETF 轮动</span><span id="benchmark-key" class="key benchmark">沪深300价格指数</span><label class="scale"><input id="log-scale" type="checkbox"> 对数刻度</label></div>
+</article>
+</div>
+</section>
+
+
+<section id="dividend-nav" class="card section-card" aria-labelledby="nav-title-red">
+<div class="section-head"><div><h2 id="nav-title-red">红利版组合净值</h2><p id="red-coverage">读取红利版历史…</p></div><span class="status">历史模拟</span></div>
+<div id="metrics-red" class="metrics"></div>
+<div id="ranges-red" class="segmented range-row" aria-label="红利版曲线区间"></div>
+<div id="chart-wrap-red" class="chart-wrap"><canvas id="chart-red" tabindex="0" aria-label="红利版净值图。点按或用左右方向键查看交易日"></canvas><div id="chart-tip-red" class="chart-tip" hidden></div></div>
+<div class="chart-footer"><span id="strategy-key-red" class="key strategy">红利版 ETF 轮动</span><span id="benchmark-key-red" class="key benchmark">沪深300价格指数</span><label class="scale"><input id="log-scale-red" type="checkbox"> 对数刻度</label></div>
+<p class="caption">红利版自 2013-09-02 起，初始净值 1；沪深300以此前一交易日收盘归一。上证180原版保留 2013 年 1 月起的历史口径。</p>
+</section>
+
+<section id="dual-history" class="card section-card" aria-labelledby="dual-title">
+<div class="section-head"><div><h2 id="dual-title">双版历史动量看板</h2><p>同一交易日期、同一回测口径 · <a class="trail-jump" href="#momentum-trails">查看动量轨迹 ↓</a></p></div><span id="dual-status" class="status" role="status">加载历史</span></div>
+<div class="dual-controls"><div class="segmented" id="dual-ranges" aria-label="两版共用的回测区间"></div>
+<div class="segmented" id="dual-mode" aria-label="图表指标"><button type="button" data-mode="return" aria-pressed="true" class="active">区间收益</button><button type="button" data-mode="drawdown" aria-pressed="false">区间回撤</button></div></div>
+<div class="dual-period"><p id="dual-window"></p><label class="shadow-scrub" id="dual-slider-wrap" hidden>同步查看日期 <input id="dual-slider" type="range" min="0" max="0" value="0"></label></div>
+<p id="dual-error" class="warning" hidden></p>
+<div class="dual-panels" id="dual-panels"></div>
+<p class="caption">四只 ETF 都有足够的上市后行情才开始回测。按前收盘动量排名，次日开盘模拟，单边万二。区间收益和回撤都按所选区间重算；真实成交规则和 15% 止线可在「并行模拟」查看。</p>
+</section>
+
+<section id="momentum-trails" class="card section-card" aria-labelledby="trail-title">
+<div class="section-head"><div><h2 id="trail-title">动量轨迹</h2><p>四只 ETF 每日收盘的 25 日加权动量分数 · 单位 %</p></div><span id="trail-status" class="status" role="status">读取动量</span></div>
+<div class="dual-controls"><div id="trail-ranges" class="segmented" aria-label="两版共用的动量观察区间"></div><p id="trail-period" class="caption"></p></div>
+<p id="trail-warning" class="warning" hidden></p>
+<label id="trail-date-wrap" class="shadow-scrub trail-date-wrap" hidden>同步查看日期 <input id="trail-date" type="range" min="0" max="0" value="0"></label>
+<div id="trail-plots" class="dual-panels"></div>
+<p class="caption">动量分数用于排名，不等于 ETF 涨跌幅或组合收益。两图使用同一纵轴和交易日，较亮的横线标示 0%。</p>
+</section>
+
+<section id="shadow" class="card section-card" aria-labelledby="shadow-title">
+<div class="section-head"><div><h2 id="shadow-title">两版并行模拟</h2><p>各 50 万元模拟本金 · 同一天起跑 · 仅更换第四只 ETF</p></div><span id="shadow-status" class="status" role="status">读取模拟</span></div>
+<p id="shadow-update" class="caption"></p>
+<div id="shadow-cards" class="shadow-cards"></div>
+<div class="shadow-chart">
+  <div class="section-head"><div><h3>收益与回撤对照</h3><p id="shadow-range"></p></div><div class="segmented" id="shadow-mode" aria-label="并行模拟图表"><button type="button" data-which="ret" class="active" aria-pressed="true">累计收益</button><button type="button" data-which="dd" aria-pressed="false">收盘回撤</button></div></div>
+  <p id="shadow-empty" class="empty-state">等待首个交易日收盘核对。</p>
+  <div id="shadow-chart-data" hidden>
+    <svg id="shadow-lines" viewBox="0 0 600 220" role="img" aria-label="上证180版与510880红利版的走势"></svg>
+    <label class="shadow-scrub">选择交易日 <input id="shadow-day" type="range" min="0" max="0" value="0"></label>
+    <div id="shadow-values" class="day-info" aria-live="polite"></div>
+  </div>
+</div>
+<details class="rules" id="shadow-events"><summary>最近 10 个交易日的模拟执行</summary><div id="shadow-log" class="shadow-log"></div><p class="caption">执行使用 09:35 锚定的限价和后续每分钟公开盘口快照，09:50 停止。两版同按单边万二、纳指 3% 买入门槛和 15% 收盘止线；公开盘口无法确认真实排队成交。</p></details>
+</section>
+
+<section id="pilot" class="card section-card" aria-labelledby="pilot-title">
+<div class="section-head"><div><h2 id="pilot-title">50 万元实盘试验</h2><p>独立账本 · 人民币 · 以券商成交回报为准</p></div><span id="pilot-status" class="status">等待读取</span></div>
+<div id="pilot-kpis" class="metrics"></div>
+<div class="desk">
+<article class="desk-panel"><h3>本日执行检查</h3><p id="session-state" role="status"></p>
+<form id="quote-form" hidden>
+  <div class="field-grid" id="quote-fields"></div>
+  <label class="check-input"><input name="verified" type="checkbox" required> 已在券商核对所涉标的正常交易、行情报价及当日公告</label>
+  <button type="submit">检查委托价格</button><p id="quote-result" class="output" role="status" hidden></p>
+</form>
+</article>
+<article class="desk-panel"><h3>加仓审查</h3><p id="review-info">需先登记试验起始日。</p><ul class="checks" id="review-checks"></ul></article>
+</div>
+<details class="rules" open><summary>实盘规则 <span>v1.0 · 北京时间</span></summary>
+<ol id="operating-rules">
+<li><b>生成信号。</b> 用上一交易日已核对的收盘，按 25 日加权动量选第一名。全部得分为负时仍选第一名。目标与持仓相同则持有，只有该标的在试验中有未成交余量时才考虑补齐。缺行情、信号过期或交易日不明时暂停换仓。</li>
+<li><b>下单与撤单。</b> 09:35 核对两腿可交易、可卖份额、价差和当日公告。每腿买卖价差须不超过 0.30%，限价相对 09:35 可成交报价最多让价 0.20%，按 0.001 元向保护方向取整。每单最多 10 万元，买入按 100 份向下取整，预留费用。先卖旧仓，旧仓全部成交后，按券商实际可用资金买新仓。09:50 撤销未成交余单并核对券商撤单结果。</li>
+<li><b>纳指溢价。</b> 513100 买入价除以当日券商所示有效参考净值减 1，<strong>达到 3.00% 就不买</strong>。参考净值缺失、过时或与有效估值明显偏离也跳过。第一名买不进时不买第二名。收盘溢价和盘中参考净值用途不同，页面的收盘提示不能代替发单前核对。已持有纳指卖出不受 3% 门槛限制。</li>
+<li><b>停牌和部分成交。</b> 下单前任一腿停牌、涨跌停排队、报价或流动性不合格，原持仓保留。旧仓只卖了一部分，剩余旧仓和现金过夜。旧仓已清但新仓买不到，保留现金，已买的份额照实记账。次日按新信号重判，不沿用昨日委托，不在窗外追单。</li>
+<li><b>试验止线。</b> 起始固定 50 万元，试验期不补钱。实盘收盘净值自峰值回撤达到 15%，停止新买入，取消未成交买单，在下一可交易窗口按限价逐步退出。停牌、跌停和跳空可能使实际亏损继续扩大。触线后结束本轮试验，不能靠补钱重置回撤。</li>
+<li><b>何时考虑加仓。</b> 满 365 天和 15 个完整持仓周期，扣费累计跑赢同篮子等权月调仓，最大收盘回撤低于 15%，可复核的单边不利滑点按金额加权不超过 25 bp，成交与估值记录齐全。全部通过才审查，首次增加最多 10 万元，并重新估算流动性。任一项不通过就保持原上限。运行满 24 个月仍不通过时复审是否结束。</li>
+</ol>
+<p class="caption"><a href="https://www.sse.com.cn/disclosure/fund/announcement/c/new/2025-09-30/513100_20250930_RDJR.pdf" target="_blank" rel="noopener">513100 参考净值口径</a> · <a href="https://www.sse.com.cn/lawandrules/sselawsrules2025/trade/universal/c/c_20260424_10816492.shtml" target="_blank" rel="noopener">上交所交易规则</a></p></details>
+<div class="section-head ledger-head"><div><h3>成交与异常记录</h3><p>卖出损益按移动平均成本扣实际费用，现金分红另计入组合净值。</p></div><button id="export-pilot" type="button" disabled>下载账本</button></div>
+<form id="ledger-form">
+<div class="field-grid">
+<label>记录类型<select name="kind" id="ledger-kind"></select></label>
+<label>日期<input name="date" type="date" required></label>
+<label data-entry="fill">成交时间<input name="time" type="time"></label>
+<label data-entry="units">ETF<select name="symbol" id="ledger-symbol"></select></label>
+<label data-entry="units"><span id="qty-label">成交份额</span><input name="qty" type="number" min="1" step="1"></label>
+<label data-entry="fill">实际成交价<input name="price" type="number" min=".001" step=".001"></label>
+<label data-entry="fill">券商费用（元）<input name="fee" type="number" min="0" step=".01" value="0"></label>
+<label data-entry="fill">09:35 同侧报价<input name="reference" type="number" min=".001" step=".001" placeholder="缺失则留空"></label>
+<label data-entry="nav">买入时的券商参考净值<input name="iopv" type="number" min=".0001" step=".0001" placeholder="缺失则留空"></label>
+<label data-entry="cash">实收分红（元）<input name="amount" type="number" min=".01" step=".01"></label>
+<label data-entry="skip">原因<select name="reason" id="ledger-reason"></select></label>
+</div>
+<div class="form-actions"><button type="submit" class="primary">记入账本</button><button id="undo-pilot" type="button" disabled>撤回末条</button><span id="ledger-feedback" role="status"></span></div>
+</form>
+<div class="scroll responsive-records"><table aria-label="实盘成交与异常记录" role="table"><thead><tr><th>日期 / 时间</th><th>类型</th><th>标的 / 原因</th><th>份额</th><th>价格</th><th>费用</th><th>滑点</th><th>成交溢价</th><th>已实现收益</th><th>已实现损益</th></tr></thead><tbody id="ledger-body"></tbody></table></div>
+</section>
+
+<section id="calendar" class="card section-card" aria-labelledby="calendar-title">
+<div class="section-head"><div><h2 id="calendar-title">持仓日历</h2><p id="calendar-mode">按交易日查看收盘持仓和组合收益</p></div><div class="date-controls">
+<button id="prev-month" aria-label="上个月">‹</button><select id="calendar-year" aria-label="日历年份"></select><select id="calendar-month" aria-label="日历月份"></select><button id="next-month" aria-label="下个月">›</button></div></div>
+<div class="calendar-panels" id="calendar-panels">
+<article class="calendar-panel" aria-labelledby="calendar-original-title"><h3 id="calendar-original-title">上证180版</h3>
+<div id="calendar-summary" class="calendar-summary"></div>
+<div id="holding-runs" class="holding-runs" aria-label="本月连续持仓区间"></div>
+<div class="weekday" aria-hidden="true"><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span></div><div id="calendar-grid" class="calendar-grid"></div>
+<div id="day-info" class="day-info" aria-live="polite"></div></article>
+<article class="calendar-panel" id="calendar-dividend" aria-labelledby="calendar-red-title"><h3 id="calendar-red-title">红利版 <small>510880</small></h3>
+<div id="calendar-summary-red" class="calendar-summary"></div>
+<div id="holding-runs-red" class="holding-runs" aria-label="红利版本月连续持仓区间"></div>
+<div class="weekday" aria-hidden="true"><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span></div><div id="calendar-grid-red" class="calendar-grid"></div>
+<div id="day-info-red" class="day-info" aria-live="polite"></div></article>
+</div>
+<div id="calendar-legend" class="legend"></div>
+<p id="calendar-basis" class="caption">红利版自 2013 年 9 月起。两版净值各按自己的历史起点累计，日收益和月收益按同期对照。</p>
+</section>
+
+<section id="annual" class="card section-card" aria-labelledby="annual-title">
+<div class="section-head"><div><h2 id="annual-title">上证180版年度收益与回撤</h2><p id="annual-mode">选中年份查看 12 个月的收益</p></div><select id="month-year" aria-label="月度收益所属年份"></select></div>
+<div id="month-grid" class="month-grid"></div>
+<div class="scroll responsive-records"><table aria-label="年度收益与回撤" role="table"><thead><tr><th>年份</th><th>组合收益</th><th>最大回撤</th><th>峰值至谷底</th><th id="annual-benchmark">沪深300指数</th></tr></thead><tbody id="annual-body"></tbody></table></div>
+</section>
+
+<section id="annual-red" class="card section-card" aria-labelledby="annual-title-red">
+<div class="section-head"><div><h2 id="annual-title-red">红利版年度收益与回撤</h2><p id="annual-mode-red">历史模拟 · 2013 年仅含 9 月起的数据 · 点月份查看持仓日历</p></div><select id="month-year-red" aria-label="红利版月度收益所属年份"></select></div>
+<div id="month-grid-red" class="month-grid"></div>
+<div class="scroll responsive-records"><table aria-label="红利版年度收益与回撤" role="table"><thead><tr><th>年份</th><th>组合收益</th><th>最大回撤</th><th>峰值至谷底</th><th id="annual-benchmark-red">沪深300价格指数</th></tr></thead><tbody id="annual-body-red"></tbody></table></div>
+</section>
+
+<section id="trades" class="card section-card" aria-labelledby="trades-title">
+<div class="section-head"><div><h2 id="trades-title">上证180版模拟逐笔交易</h2><p>历史模拟记录 · 含单边万二 · 未平仓按最新收盘估值</p></div><select id="trade-asset" aria-label="筛选交易 ETF"><option value="">全部 ETF</option></select></div>
+<div class="scroll responsive-records"><table aria-label="历史模拟交易" role="table"><thead><tr><th>ETF</th><th>买入日期</th><th>卖出日期</th><th>买入价</th><th>卖出价</th><th>持有日</th><th>交易收益</th><th>损益（元）</th></tr></thead><tbody id="trade-body"></tbody></table></div>
+<div class="pagination"><span id="trade-count"></span><button id="trade-prev">上一页</button><span id="trade-page"></span><button id="trade-next">下一页</button></div>
+</section>
+<section id="trades-red" class="card section-card" aria-labelledby="trades-title-red">
+<div class="section-head"><div><h2 id="trades-title-red">红利版模拟逐笔交易</h2><p>2013-09-02 起 · 含单边万二和权益调整 · 未平仓按最新收盘估值</p></div><select id="trade-asset-red" aria-label="筛选红利版交易 ETF"><option value="">全部 ETF</option></select></div>
+<div class="scroll responsive-records"><table aria-label="红利版历史模拟交易" role="table"><thead><tr><th>ETF</th><th>买入日期</th><th>卖出日期</th><th>买入价</th><th>卖出价</th><th>持有日</th><th>交易收益</th><th>损益（元）</th></tr></thead><tbody id="trade-body-red"></tbody></table></div>
+<div class="pagination"><span id="trade-count-red"></span><button id="trade-prev-red">上一页</button><span id="trade-page-red"></span><button id="trade-next-red">下一页</button></div>
+</section>
+<footer><p id="updated"></p><p>历史模拟在 ETF 上市前使用人民币换算的 GLD、QQQ 作为代理。模拟按日线开盘记账，未逐笔核验临时停牌与盘口。实盘模式只计入你录入的成交和权益变动。</p><p>数据源 <a href="https://finance.sina.com.cn/fund/" target="_blank" rel="noopener">新浪财经</a>、<a href="https://gu.qq.com/" target="_blank" rel="noopener">腾讯行情</a>、<a href="https://fund.eastmoney.com/" target="_blank" rel="noopener">天天基金</a>。</p></footer>
+</main>
+</body></html>

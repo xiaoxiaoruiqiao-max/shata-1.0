@@ -1,0 +1,10 @@
+services:
+  dashboard:
+    build: .
+    ports:
+      - "127.0.0.1:8765:8080"
+    volumes:
+      - etf-state:/state
+    restart: unless-stopped
+volumes:
+  etf-state:
